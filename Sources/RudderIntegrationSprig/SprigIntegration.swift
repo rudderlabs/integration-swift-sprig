@@ -68,6 +68,15 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     }
 
     public func track(payload: TrackEvent) {
-        // TODO: implement
+        let eventName = payload.event
+        let properties = payload.properties?.dictionary?.rawDictionary
+
+        if let viewController = self.viewController {
+            adapter.trackAndPresent(eventName: eventName, properties: properties, from: viewController)
+            LoggerAnalytics.debug("SprigIntegration: trackAndPresent called for event '\(eventName)'")
+        } else {
+            adapter.track(eventName: eventName, properties: properties)
+            LoggerAnalytics.debug("SprigIntegration: track called for event '\(eventName)'")
+        }
     }
 }
