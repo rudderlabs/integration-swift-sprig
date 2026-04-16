@@ -41,7 +41,8 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     }
 
     public func reset() {
-        // TODO: implement
+        adapter.logout()
+        LoggerAnalytics.debug("SprigIntegration: Sprig logout called.")
     }
 
     // MARK: - EventPlugin
