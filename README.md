@@ -108,11 +108,60 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 ### Setting a View Controller for Surveys
 
-To enable Sprig to present surveys in-app, set a view controller on the integration:
+To let Sprig present in-app surveys, hand the integration a view controller it can present from:
 
 ```swift
-sprigIntegration.setViewController(viewController)
+sprigIntegration.setViewController(self)
 ```
+
+#### When to set it
+
+Set the view controller when it becomes the active presentation context — usually from `viewDidAppear(_:)` of the topmost view controller. The most common pattern is set-on-appear / clear-on-disappear:
+
+```swift
+override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    sprigIntegration.setViewController(self)
+}
+
+override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+    sprigIntegration.setViewController(nil)
+}
+```
+
+The explicit `nil` clear is optional — see "Lifetime" below.
+
+#### Lifetime
+
+The integration holds the view controller **weakly**, so it will never keep your view controller alive past its natural lifetime. When the host releases its own reference, the stored reference auto-clears.
+
+You can also clear the reference explicitly by passing `nil`:
+
+```swift
+sprigIntegration.setViewController(nil)
+```
+
+#### Presentation safety
+
+On every `track` event, the integration:
+
+1. Hops to the main thread, so it is safe to call `track` from any thread.
+2. Verifies the stored view controller is still presentable — loaded, attached to a window, and not being dismissed.
+3. Falls back to plain `Sprig.track(...)` (i.e. no survey is presented) if the view controller has gone away or is no longer presentable. The event is still delivered to Sprig.
+
+This means you do not need to worry about clearing the reference before tearing down a view controller — the worst case is that one in-flight `track` event quietly skips presentation.
+
+#### Objective-C
+
+The Objective-C bridge exposes the same API:
+
+```objc
+[sprigIntegration setViewController:self];
+[sprigIntegration setViewController:nil]; // clear
+```
+
+---
 
 Replace:
 - `<WRITE_KEY>`: Your project's write key from the RudderStack dashboard

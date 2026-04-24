@@ -22,11 +22,28 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
 
     // MARK: - Public API
 
-    /// Sets the view controller used by Sprig to present in-app surveys.
+    /// Sets the view controller Sprig will present in-app surveys from.
     ///
-    /// The reference is held weakly, so the integration will never keep your view controller alive.
-    /// When the host releases its own reference, the integration automatically falls back to plain
-    /// `track` for subsequent events. You may also pass `nil` to clear the reference explicitly.
+    /// ## When to call
+    /// Set the view controller when it becomes the active presentation context — typically from
+    /// `viewDidAppear(_:)` of the topmost view controller in your app. You can clear it explicitly
+    /// from `viewWillDisappear(_:)` by passing `nil`, but this is optional (see "Lifetime" below).
+    ///
+    /// ## Lifetime
+    /// The reference is held **weakly**, so the integration will never keep your view controller
+    /// alive past its natural lifetime. When the host releases its own reference, the stored
+    /// reference auto-clears and subsequent `track` calls fall back to plain `Sprig.track(...)`
+    /// (i.e. no survey is presented).
+    ///
+    /// ## Presentation safety
+    /// On every `track` event, the integration:
+    /// 1. Hops to the main thread (so it is safe to call `track` from any thread).
+    /// 2. Verifies the stored view controller is still presentable — loaded, attached to a window,
+    ///    and not being dismissed.
+    /// 3. Falls back to plain `Sprig.track(...)` if the view controller has gone away or is no
+    ///    longer in a presentable state. No exception is thrown; the event is still delivered.
+    ///
+    /// - Parameter viewController: The view controller to present surveys from, or `nil` to clear.
     public func setViewController(_ viewController: UIViewController?) {
         self.viewController = viewController
     }
