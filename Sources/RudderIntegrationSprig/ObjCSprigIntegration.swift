@@ -33,8 +33,13 @@ public class ObjCSprigIntegration: NSObject, ObjCIntegrationPlugin, ObjCStandard
 
     // MARK: - Public API
 
+    /// Sets the view controller used by Sprig to present in-app surveys.
+    ///
+    /// The reference is held weakly, so the integration will never keep your view controller alive.
+    /// When the host releases its own reference, the integration automatically falls back to plain
+    /// `track` for subsequent events. You may also pass `nil` to clear the reference explicitly.
     @objc
-    public func setViewController(_ viewController: UIViewController) {
+    public func setViewController(_ viewController: UIViewController?) {
         sprigIntegration.setViewController(viewController)
     }
 

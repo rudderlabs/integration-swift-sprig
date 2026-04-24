@@ -10,7 +10,7 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     public var key: String = "Sprig"
 
     final let adapter: SprigAdapter
-    private var viewController: UIViewController?
+    private weak var viewController: UIViewController?
 
     init(adapter: SprigAdapter) {
         self.adapter = adapter
@@ -22,7 +22,12 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
 
     // MARK: - Public API
 
-    public func setViewController(_ viewController: UIViewController) {
+    /// Sets the view controller used by Sprig to present in-app surveys.
+    ///
+    /// The reference is held weakly, so the integration will never keep your view controller alive.
+    /// When the host releases its own reference, the integration automatically falls back to plain
+    /// `track` for subsequent events. You may also pass `nil` to clear the reference explicitly.
+    public func setViewController(_ viewController: UIViewController?) {
         self.viewController = viewController
     }
 

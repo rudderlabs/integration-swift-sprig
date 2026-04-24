@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import UIKit
 import RudderStackAnalytics
 @testable import RudderIntegrationSprig
 
@@ -147,6 +148,53 @@ struct SprigIntegrationTests {
 
         #expect(mock.trackCalls.count == 1)
         #expect(mock.trackCalls.first?.eventName == "Button Clicked")
+    }
+
+    @Test("Given viewController set, when track is called, then calls trackAndPresent")
+    @MainActor
+    func testTrackWithViewController() {
+        let (integration, mock) = createIntegration()
+        let viewController = UIViewController()
+        integration.setViewController(viewController)
+        let event = createTrackEvent(name: "Survey Trigger", properties: ["context": "checkout"])
+
+        integration.track(payload: event)
+
+        #expect(mock.trackAndPresentCalls.count == 1)
+        #expect(mock.trackAndPresentCalls.first?.eventName == "Survey Trigger")
+        #expect(mock.trackAndPresentCalls.first?.viewController === viewController)
+        #expect(mock.trackCalls.isEmpty)
+    }
+
+    @Test("Given viewController explicitly cleared with nil, when track is called, then falls back to plain track")
+    @MainActor
+    func testTrackAfterClearingViewController() {
+        let (integration, mock) = createIntegration()
+        let viewController = UIViewController()
+        integration.setViewController(viewController)
+        integration.setViewController(nil)
+        let event = createTrackEvent(name: "Button Clicked")
+
+        integration.track(payload: event)
+
+        #expect(mock.trackCalls.count == 1)
+        #expect(mock.trackAndPresentCalls.isEmpty)
+    }
+
+    @Test("Given viewController is held weakly, when host releases it, then integration falls back to plain track")
+    @MainActor
+    func testViewControllerHeldWeakly() {
+        let (integration, mock) = createIntegration()
+        autoreleasepool {
+            let viewController = UIViewController()
+            integration.setViewController(viewController)
+        }
+        let event = createTrackEvent(name: "Button Clicked")
+
+        integration.track(payload: event)
+
+        #expect(mock.trackCalls.count == 1)
+        #expect(mock.trackAndPresentCalls.isEmpty)
     }
 
     // MARK: - Reset Tests
