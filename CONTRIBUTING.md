@@ -21,7 +21,7 @@ You can also contribute to any open-source RudderStack project. View our [**GitH
 
 ## Committing
 
-We prefer squash or rebase commits so that all changes from a branch are committed to master as a single commit. All pull requests are squashed when merged, but rebasing prior to merge gives you better control over the commit message.
+We prefer squash or rebase commits so that all changes from a branch are committed as a single commit. All pull requests are squashed when merged, but rebasing prior to merge gives you better control over the commit message.
 
 ## Getting help
 
