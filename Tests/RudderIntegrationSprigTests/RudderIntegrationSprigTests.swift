@@ -236,10 +236,12 @@ struct SprigIntegrationTests {
             return window
         }
 
-        await Task.detached {
-            integration.track(payload: TrackEvent(event: "Background Event"))
-        }.value
-        await MainActor.run { }
+        await withCheckedContinuation { continuation in
+            mock.onTrackAndPresent = { continuation.resume() }
+            Task.detached {
+                integration.track(payload: TrackEvent(event: "Background Event"))
+            }
+        }
 
         #expect(mock.trackAndPresentCalls.count == 1)
         #expect(mock.lastTrackAndPresentOnMainThread == true)
@@ -251,10 +253,12 @@ struct SprigIntegrationTests {
         let mock = MockSprigAdapter()
         let integration = SprigIntegration(adapter: mock)
 
-        await Task.detached {
-            integration.track(payload: TrackEvent(event: "Background Event"))
-        }.value
-        await MainActor.run { }
+        await withCheckedContinuation { continuation in
+            mock.onTrack = { continuation.resume() }
+            Task.detached {
+                integration.track(payload: TrackEvent(event: "Background Event"))
+            }
+        }
 
         #expect(mock.trackCalls.count == 1)
         #expect(mock.lastTrackOnMainThread == true)
