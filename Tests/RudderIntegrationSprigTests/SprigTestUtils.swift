@@ -8,6 +8,8 @@ class MockSprigAdapter: SprigAdapter {
     var setVisitorAttributesCalls: [[String: Any]] = []
     var trackCalls: [(eventName: String, properties: [String: Any]?)] = []
     var trackAndPresentCalls: [(eventName: String, properties: [String: Any]?, viewController: UIViewController)] = []
+    var lastTrackOnMainThread: Bool?
+    var lastTrackAndPresentOnMainThread: Bool?
     var logoutCalled = false
 
     func configure(withEnvironment environmentId: String) {
@@ -27,10 +29,12 @@ class MockSprigAdapter: SprigAdapter {
     }
 
     func track(eventName: String, properties: [String: Any]?) {
+        lastTrackOnMainThread = Thread.isMainThread
         trackCalls.append((eventName: eventName, properties: properties))
     }
 
     func trackAndPresent(eventName: String, properties: [String: Any]?, from viewController: UIViewController) {
+        lastTrackAndPresentOnMainThread = Thread.isMainThread
         trackAndPresentCalls.append((eventName: eventName, properties: properties, viewController: viewController))
     }
 

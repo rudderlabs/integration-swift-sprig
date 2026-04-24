@@ -27,6 +27,15 @@ struct SprigIntegrationTests {
         return TrackEvent(event: name, properties: properties)
     }
 
+    @MainActor
+    private func makePresentableViewController() -> (UIViewController, UIWindow) {
+        let viewController = UIViewController()
+        let window = UIWindow()
+        window.rootViewController = viewController
+        window.isHidden = false
+        return (viewController, window)
+    }
+
     // MARK: - Initialization Tests
 
     @Test("Given SprigIntegration, when initialized, then has correct default properties")
@@ -140,6 +149,7 @@ struct SprigIntegrationTests {
     // MARK: - Track Tests
 
     @Test("Given track event, when no viewController set, then calls track")
+    @MainActor
     func testTrackWithoutViewController() {
         let (integration, mock) = createIntegration()
         let event = createTrackEvent(name: "Button Clicked", properties: ["buttonId": "cta-1"])
@@ -150,11 +160,11 @@ struct SprigIntegrationTests {
         #expect(mock.trackCalls.first?.eventName == "Button Clicked")
     }
 
-    @Test("Given viewController set, when track is called, then calls trackAndPresent")
+    @Test("Given presentable viewController set, when track is called, then calls trackAndPresent")
     @MainActor
     func testTrackWithViewController() {
         let (integration, mock) = createIntegration()
-        let viewController = UIViewController()
+        let (viewController, _window) = makePresentableViewController()
         integration.setViewController(viewController)
         let event = createTrackEvent(name: "Survey Trigger", properties: ["context": "checkout"])
 
@@ -164,13 +174,28 @@ struct SprigIntegrationTests {
         #expect(mock.trackAndPresentCalls.first?.eventName == "Survey Trigger")
         #expect(mock.trackAndPresentCalls.first?.viewController === viewController)
         #expect(mock.trackCalls.isEmpty)
+        _ = _window
+    }
+
+    @Test("Given viewController not in a window, when track is called, then falls back to plain track")
+    @MainActor
+    func testTrackFallsBackWhenViewControllerNotPresentable() {
+        let (integration, mock) = createIntegration()
+        let viewController = UIViewController()
+        integration.setViewController(viewController)
+        let event = createTrackEvent(name: "Button Clicked")
+
+        integration.track(payload: event)
+
+        #expect(mock.trackCalls.count == 1)
+        #expect(mock.trackAndPresentCalls.isEmpty)
     }
 
     @Test("Given viewController explicitly cleared with nil, when track is called, then falls back to plain track")
     @MainActor
     func testTrackAfterClearingViewController() {
         let (integration, mock) = createIntegration()
-        let viewController = UIViewController()
+        let (viewController, _window) = makePresentableViewController()
         integration.setViewController(viewController)
         integration.setViewController(nil)
         let event = createTrackEvent(name: "Button Clicked")
@@ -179,6 +204,7 @@ struct SprigIntegrationTests {
 
         #expect(mock.trackCalls.count == 1)
         #expect(mock.trackAndPresentCalls.isEmpty)
+        _ = _window
     }
 
     @Test("Given viewController is held weakly, when host releases it, then integration falls back to plain track")
@@ -186,7 +212,7 @@ struct SprigIntegrationTests {
     func testViewControllerHeldWeakly() {
         let (integration, mock) = createIntegration()
         autoreleasepool {
-            let viewController = UIViewController()
+            let (viewController, _) = makePresentableViewController()
             integration.setViewController(viewController)
         }
         let event = createTrackEvent(name: "Button Clicked")
@@ -195,6 +221,43 @@ struct SprigIntegrationTests {
 
         #expect(mock.trackCalls.count == 1)
         #expect(mock.trackAndPresentCalls.isEmpty)
+    }
+
+    @Test("Given track is called from a background thread, when VC is presentable, then trackAndPresent runs on the main thread")
+    func testTrackDispatchesOnMainThreadWhenPresenting() async {
+        let mock = MockSprigAdapter()
+        let integration = SprigIntegration(adapter: mock)
+        let window = await MainActor.run { () -> UIWindow in
+            let viewController = UIViewController()
+            let window = UIWindow()
+            window.rootViewController = viewController
+            window.isHidden = false
+            integration.setViewController(viewController)
+            return window
+        }
+
+        await Task.detached {
+            integration.track(payload: TrackEvent(event: "Background Event"))
+        }.value
+        await MainActor.run { }
+
+        #expect(mock.trackAndPresentCalls.count == 1)
+        #expect(mock.lastTrackAndPresentOnMainThread == true)
+        _ = window
+    }
+
+    @Test("Given track is called from a background thread, when VC is not presentable, then plain track runs on the main thread")
+    func testTrackDispatchesOnMainThreadWhenFallingBack() async {
+        let mock = MockSprigAdapter()
+        let integration = SprigIntegration(adapter: mock)
+
+        await Task.detached {
+            integration.track(payload: TrackEvent(event: "Background Event"))
+        }.value
+        await MainActor.run { }
+
+        #expect(mock.trackCalls.count == 1)
+        #expect(mock.lastTrackOnMainThread == true)
     }
 
     // MARK: - Reset Tests

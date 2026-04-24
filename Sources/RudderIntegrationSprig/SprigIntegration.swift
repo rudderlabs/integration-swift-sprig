@@ -78,13 +78,32 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
         let eventName = payload.event
         let properties = payload.properties?.dictionary?.rawDictionary
 
-        if let viewController = self.viewController {
-            adapter.trackAndPresent(eventName: eventName, properties: properties, from: viewController)
-            LoggerAnalytics.debug("SprigIntegration: trackAndPresent called for event '\(eventName)'")
-            return
-        }
+        runOnMain { [weak self] in
+            guard let self = self else { return }
 
-        adapter.track(eventName: eventName, properties: properties)
-        LoggerAnalytics.debug("SprigIntegration: track called for event '\(eventName)'")
+            if let viewController = self.viewController, Self.isPresentable(viewController) {
+                self.adapter.trackAndPresent(eventName: eventName, properties: properties, from: viewController)
+                LoggerAnalytics.debug("SprigIntegration: trackAndPresent called for event '\(eventName)'")
+            } else {
+                self.adapter.track(eventName: eventName, properties: properties)
+                LoggerAnalytics.debug("SprigIntegration: track called for event '\(eventName)'")
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func runOnMain(_ block: @escaping () -> Void) {
+        if Thread.isMainThread {
+            block()
+        } else {
+            DispatchQueue.main.async(execute: block)
+        }
+    }
+
+    private static func isPresentable(_ viewController: UIViewController) -> Bool {
+        return viewController.isViewLoaded
+            && viewController.view.window != nil
+            && !viewController.isBeingDismissed
     }
 }
