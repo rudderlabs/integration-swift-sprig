@@ -330,4 +330,21 @@ struct SprigUtilsTests {
         #expect(filtered["doubleVal"] as? Double == 3.14)
         #expect(filtered["intVal"] as? Int == 42)
     }
+
+    @Test("Given NSNumber-wrapped values, when filterTraits is called, then values are included")
+    func testFilterTraitsAcceptsNSNumber() {
+        let traits: [String: Any] = [
+            "nsBool": NSNumber(value: true),
+            "nsInt": NSNumber(value: Int32(42)),
+            "nsInt64": NSNumber(value: Int64(9_000_000_000)),
+            "nsDouble": NSNumber(value: 2.5)
+        ]
+        let filtered = SprigUtils.filterTraits(traits)
+
+        #expect(filtered.count == 4)
+        #expect(filtered["nsBool"] as? Bool == true)
+        #expect(filtered["nsInt"] as? Int == 42)
+        #expect(filtered["nsInt64"] as? Int64 == 9_000_000_000)
+        #expect(filtered["nsDouble"] as? Double == 2.5)
+    }
 }

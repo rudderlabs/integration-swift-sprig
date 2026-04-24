@@ -1,6 +1,5 @@
 import Foundation
 import UIKit
-import UserLeapKit
 import RudderStackAnalytics
 
 public class SprigIntegration: IntegrationPlugin, StandardIntegration {
