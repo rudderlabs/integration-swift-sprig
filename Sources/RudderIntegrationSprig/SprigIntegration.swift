@@ -8,7 +8,7 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     public var analytics: Analytics?
     public var key: String = "Sprig"
 
-    final let adapter: SprigAdapter
+    final var adapter: SprigAdapter
     private weak var viewController: UIViewController?
     private var loggingListenerRegistered = false
 
@@ -51,14 +51,16 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     // MARK: - IntegrationPlugin
 
     public func getDestinationInstance() -> Any? {
-        return adapter.getSprigInstance()
+        return adapter.sprigInstance
     }
 
     public func create(destinationConfig: [String: Any]) throws {
+        guard adapter.sprigInstance == nil else { return }
         guard let environmentId = destinationConfig["environmentId"] as? String, !environmentId.isEmpty else {
             LoggerAnalytics.error("SprigIntegration: Invalid or missing environmentId. Aborting Sprig initialization.")
             return
         }
+        adapter.sprigInstance = adapter.provideSprigInstance()
         adapter.configure(withEnvironment: environmentId)
         registerSprigLogging()
         LoggerAnalytics.debug("SprigIntegration: Sprig SDK initialized successfully.")
@@ -74,6 +76,7 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
             adapter.unregisterLoggingListener()
             loggingListenerRegistered = false
         }
+        adapter.sprigInstance = nil
         LoggerAnalytics.debug("SprigIntegration: teardown completed.")
     }
 

@@ -20,6 +20,7 @@ final class CapturingLogger: Logger, @unchecked Sendable {
 final class SilentLogger: Logger, @unchecked Sendable {}
 
 class MockSprigAdapter: SprigAdapter {
+    var sprigInstance: Any?
     var configureCalls: [String] = []
     var setUserIdentifierCalls: [String] = []
     var setEmailAddressCalls: [String] = []
@@ -67,7 +68,7 @@ class MockSprigAdapter: SprigAdapter {
         logoutCalled = true
     }
 
-    func getSprigInstance() -> Any? {
+    func provideSprigInstance() -> Any {
         return "MockSprigInstance"
     }
 

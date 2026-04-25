@@ -3,6 +3,7 @@ import UIKit
 import UserLeapKit
 
 protocol SprigAdapter {
+    var sprigInstance: Any? { get set }
     func configure(withEnvironment environmentId: String)
     func setUserIdentifier(_ userId: String)
     func setEmailAddress(_ email: String)
@@ -10,54 +11,60 @@ protocol SprigAdapter {
     func track(eventName: String, properties: [String: Any]?)
     func trackAndPresent(eventName: String, properties: [String: Any]?, from viewController: UIViewController)
     func logout()
-    func getSprigInstance() -> Any?
+    func provideSprigInstance() -> Any
     func registerLoggingListener(_ handler: @escaping (String) -> Void)
     func unregisterLoggingListener()
 }
 
 class DefaultSprigAdapter: SprigAdapter {
+    var sprigInstance: Any?
+
+    private var sprig: Sprig? {
+        return sprigInstance as? Sprig
+    }
+
     func configure(withEnvironment environmentId: String) {
-        Sprig.shared.configure(withEnvironment: environmentId)
+        sprig?.configure(withEnvironment: environmentId)
     }
 
     func setUserIdentifier(_ userId: String) {
-        Sprig.shared.setUserIdentifier(userId)
+        sprig?.setUserIdentifier(userId)
     }
 
     func setEmailAddress(_ email: String) {
-        Sprig.shared.setEmailAddress(email)
+        sprig?.setEmailAddress(email)
     }
 
     func setVisitorAttributes(_ attributes: [String: Any]) {
-        Sprig.shared.setVisitorAttributes(attributes)
+        sprig?.setVisitorAttributes(attributes)
     }
 
     func track(eventName: String, properties: [String: Any]?) {
         let payload = EventPayload(eventName: eventName, properties: properties)
-        Sprig.shared.track(payload: payload)
+        sprig?.track(payload: payload)
     }
 
     func trackAndPresent(eventName: String, properties: [String: Any]?, from viewController: UIViewController) {
         let payload = EventPayload(eventName: eventName, properties: properties)
-        Sprig.shared.trackAndPresent(payload: payload, from: viewController)
+        sprig?.trackAndPresent(payload: payload, from: viewController)
     }
 
     func logout() {
-        Sprig.shared.logout()
+        sprig?.logout()
     }
 
-    func getSprigInstance() -> Any? {
+    func provideSprigInstance() -> Any {
         return Sprig.shared
     }
 
     func registerLoggingListener(_ handler: @escaping (String) -> Void) {
-        Sprig.shared.registerEventListener(for: .loggingEvent) { payload in
+        sprig?.registerEventListener(for: .loggingEvent) { payload in
             guard let message = payload[LifecycleEventDataKey.loggingEventMessage] as? String else { return }
             handler(message)
         }
     }
 
     func unregisterLoggingListener() {
-        Sprig.shared.unregisterAllEventListeners(for: .loggingEvent)
+        sprig?.unregisterAllEventListeners(for: .loggingEvent)
     }
 }

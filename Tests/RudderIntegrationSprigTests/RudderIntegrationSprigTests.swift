@@ -75,6 +75,18 @@ struct SprigIntegrationTests {
 
         #expect(mock.configureCalls.count == 1)
         #expect(mock.configureCalls.first == "test-env-123")
+        #expect(mock.sprigInstance as? String == "MockSprigInstance")
+    }
+
+    @Test("Given already-initialized integration, when create is called again, then skips re-initialization")
+    func testCreateIsIdempotent() throws {
+        let (integration, mock) = createIntegration()
+
+        try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+        try integration.create(destinationConfig: ["environmentId": "different-env"])
+
+        #expect(mock.configureCalls.count == 1)
+        #expect(mock.configureCalls.first == "test-env-123")
     }
 
     @Test("Given missing environmentId, when create is called, then does not configure Sprig SDK")
@@ -97,10 +109,20 @@ struct SprigIntegrationTests {
 
     // MARK: - GetDestinationInstance Tests
 
-    @Test("Given SprigIntegration, when getDestinationInstance is called, then returns adapter instance")
-    func testGetDestinationInstance() {
+    @Test("Given uninitialized integration, when getDestinationInstance is called, then returns nil")
+    func testGetDestinationInstanceBeforeCreate() {
         let (integration, _) = createIntegration()
 
+        let instance = integration.getDestinationInstance()
+
+        #expect(instance == nil)
+    }
+
+    @Test("Given initialized integration, when getDestinationInstance is called, then returns adapter instance")
+    func testGetDestinationInstanceAfterCreate() throws {
+        let (integration, _) = createIntegration()
+
+        try integration.create(destinationConfig: ["environmentId": "test-env-123"])
         let instance = integration.getDestinationInstance()
 
         #expect(instance as? String == "MockSprigInstance")
