@@ -4,7 +4,7 @@ import UIKit
 import RudderStackAnalytics
 @testable import RudderIntegrationSprig
 
-@Suite("RudderIntegrationSprig Tests")
+@Suite("RudderIntegrationSprig Tests", .serialized)
 struct SprigIntegrationTests {
 
     // MARK: - Test Setup Helpers
@@ -25,6 +25,24 @@ struct SprigIntegrationTests {
 
     private func createTrackEvent(name: String, properties: [String: Any]? = nil) -> TrackEvent {
         return TrackEvent(event: name, properties: properties)
+    }
+
+    /// Runs `body` with `LoggerAnalytics.logLevel` (and optionally the logger) swapped in,
+    /// restoring the previous values afterwards. Keeps tests that mutate the shared logger
+    /// singleton hermetic from each other.
+    private func withLogLevel<T>(_ level: LogLevel, logger: Logger? = nil, body: () throws -> T) throws -> T {
+        let previousLevel = LoggerAnalytics.logLevel
+        LoggerAnalytics.logLevel = level
+        if let logger = logger {
+            LoggerAnalytics.setLogger(logger)
+        }
+        defer {
+            LoggerAnalytics.logLevel = previousLevel
+            if logger != nil {
+                LoggerAnalytics.setLogger(SilentLogger())
+            }
+        }
+        return try body()
     }
 
     @MainActor
@@ -262,6 +280,97 @@ struct SprigIntegrationTests {
 
         #expect(mock.trackCalls.count == 1)
         #expect(mock.lastTrackOnMainThread == true)
+    }
+
+    // MARK: - Logging Listener Tests
+
+    @Test("Given logLevel is not .none, when create is called, then registers logging listener")
+    func testCreateRegistersLoggingListener() throws {
+        try withLogLevel(.debug) {
+            let (integration, mock) = createIntegration()
+
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+
+            #expect(mock.registerLoggingListenerCalls.count == 1)
+        }
+    }
+
+    @Test("Given logLevel is .none, when create is called, then skips logging listener registration")
+    func testCreateSkipsLoggingListenerWhenLogLevelIsNone() throws {
+        try withLogLevel(.none) {
+            let (integration, mock) = createIntegration()
+
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+
+            #expect(mock.registerLoggingListenerCalls.isEmpty)
+        }
+    }
+
+    @Test("Given create is called twice, when listener already registered, then does not register again")
+    func testCreateDoesNotRegisterLoggingListenerTwice() throws {
+        try withLogLevel(.debug) {
+            let (integration, mock) = createIntegration()
+
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+
+            #expect(mock.registerLoggingListenerCalls.count == 1)
+        }
+    }
+
+    @Test("Given registered listener emits a message, when invoked, then forwards to LoggerAnalytics.debug")
+    func testLoggingListenerForwardsMessageToDebug() throws {
+        let capturingLogger = CapturingLogger()
+        try withLogLevel(.debug, logger: capturingLogger) {
+            let (integration, mock) = createIntegration()
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+
+            mock.registerLoggingListenerCalls.first?("hello from Sprig")
+
+            #expect(capturingLogger.debugMessages.contains("SprigIntegration: hello from Sprig"))
+        }
+    }
+
+    // MARK: - Teardown Tests
+
+    @Test("Given logging listener registered, when teardown is called, then unregisters listener")
+    func testTeardownUnregistersLoggingListener() throws {
+        try withLogLevel(.debug) {
+            let (integration, mock) = createIntegration()
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+            #expect(mock.registerLoggingListenerCalls.count == 1)
+            #expect(mock.unregisterLoggingListenerCalled == false)
+
+            integration.teardown()
+
+            #expect(mock.unregisterLoggingListenerCalled == true)
+        }
+    }
+
+    @Test("Given no logging listener registered, when teardown is called, then does not call unregister")
+    func testTeardownDoesNotUnregisterWhenNotRegistered() throws {
+        try withLogLevel(.none) {
+            let (integration, mock) = createIntegration()
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+            #expect(mock.registerLoggingListenerCalls.isEmpty)
+
+            integration.teardown()
+
+            #expect(mock.unregisterLoggingListenerCalled == false)
+        }
+    }
+
+    @Test("Given teardown was called, when create is called again, then re-registers logging listener")
+    func testTeardownAllowsReRegistration() throws {
+        try withLogLevel(.debug) {
+            let (integration, mock) = createIntegration()
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+            integration.teardown()
+
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+
+            #expect(mock.registerLoggingListenerCalls.count == 2)
+        }
     }
 
     // MARK: - Reset Tests

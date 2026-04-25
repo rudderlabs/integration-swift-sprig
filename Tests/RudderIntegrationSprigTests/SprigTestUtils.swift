@@ -1,5 +1,23 @@
 import UIKit
+import RudderStackAnalytics
 @testable import RudderIntegrationSprig
+
+final class CapturingLogger: Logger, @unchecked Sendable {
+    private let lock = NSLock()
+    private var _debugMessages: [String] = []
+
+    var debugMessages: [String] {
+        lock.lock(); defer { lock.unlock() }
+        return _debugMessages
+    }
+
+    func debug(log: String) {
+        lock.lock(); defer { lock.unlock() }
+        _debugMessages.append(log)
+    }
+}
+
+final class SilentLogger: Logger, @unchecked Sendable {}
 
 class MockSprigAdapter: SprigAdapter {
     var configureCalls: [String] = []
@@ -11,6 +29,8 @@ class MockSprigAdapter: SprigAdapter {
     var lastTrackOnMainThread: Bool?
     var lastTrackAndPresentOnMainThread: Bool?
     var logoutCalled = false
+    var registerLoggingListenerCalls: [(String) -> Void] = []
+    var unregisterLoggingListenerCalled = false
 
     var onTrack: (() -> Void)?
     var onTrackAndPresent: (() -> Void)?
@@ -49,5 +69,13 @@ class MockSprigAdapter: SprigAdapter {
 
     func getSprigInstance() -> Any? {
         return "MockSprigInstance"
+    }
+
+    func registerLoggingListener(_ handler: @escaping (String) -> Void) {
+        registerLoggingListenerCalls.append(handler)
+    }
+
+    func unregisterLoggingListener() {
+        unregisterLoggingListenerCalled = true
     }
 }

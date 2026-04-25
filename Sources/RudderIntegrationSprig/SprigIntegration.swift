@@ -10,6 +10,7 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
 
     final let adapter: SprigAdapter
     private weak var viewController: UIViewController?
+    private var loggingListenerRegistered = false
 
     init(adapter: SprigAdapter) {
         self.adapter = adapter
@@ -59,12 +60,21 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
             return
         }
         adapter.configure(withEnvironment: environmentId)
+        registerSprigLogging()
         LoggerAnalytics.debug("SprigIntegration: Sprig SDK initialized successfully.")
     }
 
     public func reset() {
         adapter.logout()
         LoggerAnalytics.debug("SprigIntegration: Sprig logout called.")
+    }
+
+    public func teardown() {
+        if loggingListenerRegistered {
+            adapter.unregisterLoggingListener()
+            loggingListenerRegistered = false
+        }
+        LoggerAnalytics.debug("SprigIntegration: teardown completed.")
     }
 
     // MARK: - EventPlugin
@@ -108,6 +118,22 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     }
 
     // MARK: - Helpers
+
+    /// Forwards Sprig SDK log messages to the Rudder logger.
+    ///
+    /// Sprig iOS emits log output via `.loggingEvent` lifecycle callbacks but — unlike Sprig
+    /// Android — does not expose a severity with each message, so every message is forwarded
+    /// at `debug`. Registration is skipped when the Rudder log level is `.none`, and guarded
+    /// so repeated `create(...)` calls do not stack listeners.
+    private func registerSprigLogging() {
+        guard !loggingListenerRegistered else { return }
+        guard LoggerAnalytics.logLevel != .none else { return }
+
+        adapter.registerLoggingListener { message in
+            LoggerAnalytics.debug("SprigIntegration: \(message)")
+        }
+        loggingListenerRegistered = true
+    }
 
     private func runOnMain(_ block: @escaping () -> Void) {
         if Thread.isMainThread {

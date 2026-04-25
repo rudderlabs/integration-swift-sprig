@@ -11,6 +11,8 @@ protocol SprigAdapter {
     func trackAndPresent(eventName: String, properties: [String: Any]?, from viewController: UIViewController)
     func logout()
     func getSprigInstance() -> Any?
+    func registerLoggingListener(_ handler: @escaping (String) -> Void)
+    func unregisterLoggingListener()
 }
 
 class DefaultSprigAdapter: SprigAdapter {
@@ -46,5 +48,16 @@ class DefaultSprigAdapter: SprigAdapter {
 
     func getSprigInstance() -> Any? {
         return Sprig.shared
+    }
+
+    func registerLoggingListener(_ handler: @escaping (String) -> Void) {
+        Sprig.shared.registerEventListener(for: .loggingEvent) { payload in
+            guard let message = payload[LifecycleEventDataKey.loggingEventMessage] as? String else { return }
+            handler(message)
+        }
+    }
+
+    func unregisterLoggingListener() {
+        Sprig.shared.unregisterAllEventListeners(for: .loggingEvent)
     }
 }
