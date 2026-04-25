@@ -2,11 +2,18 @@ import Foundation
 import RudderStackAnalytics
 
 enum SprigUtils {
+    static let emailKey = "email"
+
+    /// Trait keys handled by dedicated Sprig setters (e.g. `setEmailAddress`) rather than the
+    /// generic `setVisitorAttributes`. Keys listed here are skipped by the custom-trait loop so
+    /// they are not also sent as visitor attributes.
+    static let standardTraitKeys: Set<String> = [emailKey]
+
     static func filterTraits(_ traits: [String: Any]) -> [String: Any] {
         var filtered = [String: Any]()
 
         for (key, value) in traits {
-            if key == "email" {
+            if standardTraitKeys.contains(key) {
                 continue
             }
             guard key.count < 256, !key.hasPrefix("!") else {

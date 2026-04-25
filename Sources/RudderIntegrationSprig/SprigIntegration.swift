@@ -88,7 +88,7 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
 
         if let traits = payload.context?["traits"] as? AnyCodable,
            let traitsDictionary = traits.value as? [String: Any] {
-            if let email = traitsDictionary["email"] as? String {
+            if let email = traitsDictionary[SprigUtils.emailKey] as? String {
                 adapter.setEmailAddress(email)
             }
             let filteredTraits = SprigUtils.filterTraits(traitsDictionary)
