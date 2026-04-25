@@ -408,14 +408,25 @@ struct SprigUtilsTests {
         #expect(filtered["valid"] as? String == "value")
     }
 
-    @Test("Given key longer than 255 chars, when filterTraits is called, then key is excluded")
-    func testFilterTraitsExcludesLongKeys() {
-        let longKey = String(repeating: "a", count: 256)
+    @Test("Given key longer than 255 chars, when filterTraits is called, then key is trimmed to 255 chars")
+    func testFilterTraitsTrimsLongKeys() {
+        let longKey = String(repeating: "a", count: 300)
+        let trimmedKey = String(repeating: "a", count: 255)
         let traits: [String: Any] = [longKey: "value", "short": "value"]
         let filtered = SprigUtils.filterTraits(traits)
 
         #expect(filtered[longKey] == nil)
+        #expect(filtered[trimmedKey] as? String == "value")
         #expect(filtered["short"] as? String == "value")
+    }
+
+    @Test("Given key exactly 255 chars, when filterTraits is called, then key is included as-is")
+    func testFilterTraitsAcceptsBoundaryLengthKey() {
+        let boundaryKey = String(repeating: "a", count: 255)
+        let traits: [String: Any] = [boundaryKey: "value"]
+        let filtered = SprigUtils.filterTraits(traits)
+
+        #expect(filtered[boundaryKey] as? String == "value")
     }
 
     @Test("Given unsupported value type, when filterTraits is called, then value is excluded")
