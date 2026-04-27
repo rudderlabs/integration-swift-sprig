@@ -19,8 +19,8 @@ protocol SprigAdapter {
 class DefaultSprigAdapter: SprigAdapter {
     var sprigInstance: Any?
 
-    private var sprig: Sprig? {
-        return sprigInstance as? Sprig
+    private var sprig: UserLeap? {
+        return sprigInstance as? UserLeap
     }
 
     func configure(withEnvironment environmentId: String) {
