@@ -7,7 +7,6 @@
 
 import SwiftUI
 import UIKit
-import RudderStackAnalytics
 import RudderIntegrationSprig
 
 struct ContentView: View {
