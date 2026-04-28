@@ -91,13 +91,7 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
 
         if let traits = payload.context?["traits"] as? AnyCodable,
            let traitsDictionary = traits.value as? [String: Any] {
-            if let email = traitsDictionary[SprigUtils.emailKey] as? String {
-                sprigAdapter.setEmailAddress(email)
-            }
-            let filteredTraits = SprigUtils.filterTraits(traitsDictionary)
-            if !filteredTraits.isEmpty {
-                sprigAdapter.setVisitorAttributes(filteredTraits)
-            }
+            SprigUtils.setSprigAttributes(traitsDictionary, adapter: sprigAdapter)
         }
 
         LoggerAnalytics.debug("SprigIntegration: Identify event processed for userId: \(userId)")

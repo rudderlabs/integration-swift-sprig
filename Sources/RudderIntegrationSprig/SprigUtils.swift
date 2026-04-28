@@ -9,30 +9,44 @@ enum SprigUtils {
     static let maxAttributeKeyLength = 255
 
     /// Trait keys handled by dedicated Sprig setters (e.g. `setEmailAddress`) rather than the
-    /// generic `setVisitorAttributes`. Keys listed here are skipped by the custom-trait loop so
+    /// generic `setVisitorAttribute`. Keys listed here are skipped by the custom-trait loop so
     /// they are not also sent as visitor attributes.
     static let standardTraitKeys: Set<String> = [emailKey]
 
-    static func filterTraits(_ traits: [String: Any]) -> [String: Any] {
-        var filtered = [String: Any]()
+    static func setSprigAttributes(_ traits: [String: Any], adapter: SprigAdapter) {
+        setStandardTraits(traits, adapter: adapter)
+        setCustomTraits(traits, adapter: adapter)
+    }
 
-        for (key, value) in traits {
-            if standardTraitKeys.contains(key) {
-                continue
-            }
-            if key.hasPrefix("!") {
-                LoggerAnalytics.warn("SprigIntegration: '\(key)' is not a valid property name. Property names cannot start with '!'. Ignoring property.")
-                continue
-            }
-            let normalizedKey = normalizeKeyLength(key)
-            if value is String || value is Bool || value is Double || value is Int || value is NSNumber {
-                filtered[normalizedKey] = value
-            } else {
-                LoggerAnalytics.warn("SprigIntegration: '\(value)' is not a valid property value. Only String, Bool, Double and Int are accepted. Ignoring property.")
-            }
+    private static func setStandardTraits(_ traits: [String: Any], adapter: SprigAdapter) {
+        if let email = traits[emailKey] as? String {
+            adapter.setEmailAddress(email)
         }
+    }
 
-        return filtered
+    private static func setCustomTraits(_ traits: [String: Any], adapter: SprigAdapter) {
+        for (key, value) in traits where !standardTraitKeys.contains(key) {
+            setVisitorAttribute(key: key, value: value, adapter: adapter)
+        }
+    }
+
+    private static func setVisitorAttribute(key: String, value: Any, adapter: SprigAdapter) {
+        if key.hasPrefix("!") {
+            LoggerAnalytics.warn("SprigIntegration: '\(key)' is not a valid property name. Property names cannot start with '!'. Ignoring property.")
+            return
+        }
+        let normalizedKey = normalizeKeyLength(key)
+        guard isSupportedValue(value) else {
+            LoggerAnalytics.warn("SprigIntegration: '\(value)' is not a valid property value. Only String, Bool, Double and Int are accepted. Ignoring property.")
+            return
+        }
+        adapter.setVisitorAttribute(key: normalizedKey, value: value)
+    }
+
+    /// Sprig accepts String, Bool, Int, and Double. Swift bridges Bool/Int/Double to NSNumber,
+    /// so a single `is NSNumber` check covers all numeric/boolean inputs (including ObjC values).
+    private static func isSupportedValue(_ value: Any) -> Bool {
+        return value is String || value is NSNumber
     }
 
     private static func normalizeKeyLength(_ key: String) -> String {

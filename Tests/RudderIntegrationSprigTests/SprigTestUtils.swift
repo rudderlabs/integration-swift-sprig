@@ -24,7 +24,7 @@ class MockSprigAdapter: SprigAdapter {
     var configureCalls: [String] = []
     var setUserIdentifierCalls: [String] = []
     var setEmailAddressCalls: [String] = []
-    var setVisitorAttributesCalls: [[String: Any]] = []
+    var setVisitorAttributeCalls: [(key: String, value: Any)] = []
     var trackCalls: [(eventName: String, properties: [String: Any]?)] = []
     var trackAndPresentCalls: [(eventName: String, properties: [String: Any]?, viewController: UIViewController)] = []
     var lastTrackOnMainThread: Bool?
@@ -48,8 +48,8 @@ class MockSprigAdapter: SprigAdapter {
         setEmailAddressCalls.append(email)
     }
 
-    func setVisitorAttributes(_ attributes: [String: Any]) {
-        setVisitorAttributesCalls.append(attributes)
+    func setVisitorAttribute(key: String, value: Any) {
+        setVisitorAttributeCalls.append((key: key, value: value))
     }
 
     func track(eventName: String, properties: [String: Any]?) {

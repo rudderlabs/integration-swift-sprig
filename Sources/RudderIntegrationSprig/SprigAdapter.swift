@@ -7,7 +7,7 @@ protocol SprigAdapter {
     func configure(withEnvironment environmentId: String)
     func setUserIdentifier(_ userId: String)
     func setEmailAddress(_ email: String)
-    func setVisitorAttributes(_ attributes: [String: Any])
+    func setVisitorAttribute(key: String, value: Any)
     func track(eventName: String, properties: [String: Any]?)
     func trackAndPresent(eventName: String, properties: [String: Any]?, from viewController: UIViewController)
     func logout()
@@ -35,8 +35,19 @@ class DefaultSprigAdapter: SprigAdapter {
         sprig?.setEmailAddress(email)
     }
 
-    func setVisitorAttributes(_ attributes: [String: Any]) {
-        sprig?.setVisitorAttributes(attributes)
+    func setVisitorAttribute(key: String, value: Any) {
+        guard let sprig = sprig else { return }
+        if let stringValue = value as? String {
+            sprig.setVisitorAttribute(key: key, value: stringValue)
+        } else if let boolValue = value as? Bool {
+            sprig.setVisitorAttribute(key: key, boolValue: boolValue)
+        } else if let intValue = value as? Int {
+            sprig.setVisitorAttribute(key: key, intValue: intValue)
+        } else if let doubleValue = value as? Double {
+            sprig.setVisitorAttribute(key: key, doubleValue: doubleValue)
+        } else if let nsNumber = value as? NSNumber {
+            sprig.setVisitorAttribute(key: key, intValue: nsNumber.intValue)
+        }
     }
 
     func track(eventName: String, properties: [String: Any]?) {

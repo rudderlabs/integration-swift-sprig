@@ -179,11 +179,10 @@ struct SprigIntegrationTests {
 
         integration.identify(payload: event)
 
-        #expect(mock.setVisitorAttributesCalls.count == 1)
-        let attributes = mock.setVisitorAttributesCalls.first!
-        #expect(attributes["email"] == nil)
-        #expect(attributes["name"] as? String == "Test")
-        #expect(attributes["age"] as? Int == 30)
+        let captured = Dictionary(uniqueKeysWithValues: mock.setVisitorAttributeCalls.map { ($0.key, $0.value) })
+        #expect(captured["email"] == nil)
+        #expect(captured["name"] as? String == "Test")
+        #expect(captured["age"] as? Int == 30)
     }
 
     // MARK: - Track Tests
@@ -412,85 +411,86 @@ struct SprigIntegrationTests {
 @Suite("SprigUtils Tests")
 struct SprigUtilsTests {
 
-    @Test("Given traits with email, when filterTraits is called, then email is excluded")
-    func testFilterTraitsExcludesEmail() {
-        let traits: [String: Any] = ["email": "test@example.com", "name": "Test"]
-        let filtered = SprigUtils.filterTraits(traits)
-
-        #expect(filtered["email"] == nil)
-        #expect(filtered["name"] as? String == "Test")
+    private func capture(_ traits: [String: Any]) -> (mock: MockSprigAdapter, attributes: [String: Any]) {
+        let mock = MockSprigAdapter()
+        SprigUtils.setSprigAttributes(traits, adapter: mock)
+        let attributes = Dictionary(uniqueKeysWithValues: mock.setVisitorAttributeCalls.map { ($0.key, $0.value) })
+        return (mock, attributes)
     }
 
-    @Test("Given key starting with !, when filterTraits is called, then key is excluded")
-    func testFilterTraitsExcludesExclamationPrefix() {
-        let traits: [String: Any] = ["!internal": "value", "valid": "value"]
-        let filtered = SprigUtils.filterTraits(traits)
+    @Test("Given traits with email, when setSprigAttributes is called, then email is set via setEmailAddress and excluded from visitor attributes")
+    func testSetSprigAttributesRoutesEmailToDedicatedSetter() {
+        let (mock, attributes) = capture(["email": "test@example.com", "name": "Test"])
 
-        #expect(filtered["!internal"] == nil)
-        #expect(filtered["valid"] as? String == "value")
+        #expect(mock.setEmailAddressCalls == ["test@example.com"])
+        #expect(attributes["email"] == nil)
+        #expect(attributes["name"] as? String == "Test")
     }
 
-    @Test("Given key longer than 255 chars, when filterTraits is called, then key is trimmed to 255 chars")
-    func testFilterTraitsTrimsLongKeys() {
+    @Test("Given key starting with !, when setSprigAttributes is called, then key is excluded")
+    func testSetSprigAttributesExcludesExclamationPrefix() {
+        let (_, attributes) = capture(["!internal": "value", "valid": "value"])
+
+        #expect(attributes["!internal"] == nil)
+        #expect(attributes["valid"] as? String == "value")
+    }
+
+    @Test("Given key longer than 255 chars, when setSprigAttributes is called, then key is trimmed to 255 chars")
+    func testSetSprigAttributesTrimsLongKeys() {
         let longKey = String(repeating: "a", count: 300)
         let trimmedKey = String(repeating: "a", count: 255)
-        let traits: [String: Any] = [longKey: "value", "short": "value"]
-        let filtered = SprigUtils.filterTraits(traits)
+        let (_, attributes) = capture([longKey: "value", "short": "value"])
 
-        #expect(filtered[longKey] == nil)
-        #expect(filtered[trimmedKey] as? String == "value")
-        #expect(filtered["short"] as? String == "value")
+        #expect(attributes[longKey] == nil)
+        #expect(attributes[trimmedKey] as? String == "value")
+        #expect(attributes["short"] as? String == "value")
     }
 
-    @Test("Given key exactly 255 chars, when filterTraits is called, then key is included as-is")
-    func testFilterTraitsAcceptsBoundaryLengthKey() {
+    @Test("Given key exactly 255 chars, when setSprigAttributes is called, then key is included as-is")
+    func testSetSprigAttributesAcceptsBoundaryLengthKey() {
         let boundaryKey = String(repeating: "a", count: 255)
-        let traits: [String: Any] = [boundaryKey: "value"]
-        let filtered = SprigUtils.filterTraits(traits)
+        let (_, attributes) = capture([boundaryKey: "value"])
 
-        #expect(filtered[boundaryKey] as? String == "value")
+        #expect(attributes[boundaryKey] as? String == "value")
     }
 
-    @Test("Given unsupported value type, when filterTraits is called, then value is excluded")
-    func testFilterTraitsExcludesUnsupportedTypes() {
-        let traits: [String: Any] = ["array": [1, 2, 3], "valid": "string"]
-        let filtered = SprigUtils.filterTraits(traits)
+    @Test("Given unsupported value type, when setSprigAttributes is called, then value is excluded")
+    func testSetSprigAttributesExcludesUnsupportedTypes() {
+        let (_, attributes) = capture(["array": [1, 2, 3], "valid": "string"])
 
-        #expect(filtered["array"] == nil)
-        #expect(filtered["valid"] as? String == "string")
+        #expect(attributes["array"] == nil)
+        #expect(attributes["valid"] as? String == "string")
     }
 
-    @Test("Given supported value types, when filterTraits is called, then values are included")
-    func testFilterTraitsIncludesSupportedTypes() {
-        let traits: [String: Any] = [
+    @Test("Given supported value types, when setSprigAttributes is called, then values are forwarded as-is")
+    func testSetSprigAttributesForwardsSupportedTypes() {
+        let (_, attributes) = capture([
             "stringVal": "hello",
             "boolVal": true,
             "doubleVal": 3.14,
             "intVal": 42
-        ]
-        let filtered = SprigUtils.filterTraits(traits)
+        ])
 
-        #expect(filtered.count == 4)
-        #expect(filtered["stringVal"] as? String == "hello")
-        #expect(filtered["boolVal"] as? Bool == true)
-        #expect(filtered["doubleVal"] as? Double == 3.14)
-        #expect(filtered["intVal"] as? Int == 42)
+        #expect(attributes.count == 4)
+        #expect(attributes["stringVal"] as? String == "hello")
+        #expect(attributes["boolVal"] as? Bool == true)
+        #expect(attributes["doubleVal"] as? Double == 3.14)
+        #expect(attributes["intVal"] as? Int == 42)
     }
 
-    @Test("Given NSNumber-wrapped values, when filterTraits is called, then values are included")
-    func testFilterTraitsAcceptsNSNumber() {
-        let traits: [String: Any] = [
+    @Test("Given NSNumber-wrapped values, when setSprigAttributes is called, then values are forwarded as-is")
+    func testSetSprigAttributesAcceptsNSNumber() {
+        let (_, attributes) = capture([
             "nsBool": NSNumber(value: true),
             "nsInt": NSNumber(value: Int32(42)),
             "nsInt64": NSNumber(value: Int64(9_000_000_000)),
             "nsDouble": NSNumber(value: 2.5)
-        ]
-        let filtered = SprigUtils.filterTraits(traits)
+        ])
 
-        #expect(filtered.count == 4)
-        #expect(filtered["nsBool"] as? Bool == true)
-        #expect(filtered["nsInt"] as? Int == 42)
-        #expect(filtered["nsInt64"] as? Int64 == 9_000_000_000)
-        #expect(filtered["nsDouble"] as? Double == 2.5)
+        #expect(attributes.count == 4)
+        #expect(attributes["nsBool"] as? Bool == true)
+        #expect(attributes["nsInt"] as? Int == 42)
+        #expect(attributes["nsInt64"] as? Int64 == 9_000_000_000)
+        #expect(attributes["nsDouble"] as? Double == 2.5)
     }
 }
