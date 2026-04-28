@@ -160,6 +160,18 @@ The Objective-C bridge exposes the same API:
 [sprigIntegration setViewController:nil]; // clear
 ```
 
+### Sprig SDK Logging
+
+The integration forwards Sprig SDK log messages to the RudderStack logger so they appear alongside the rest of your SDK output.
+
+The Sprig iOS SDK emits log messages without a severity (its `loggingEvent` callback only carries a message string), so the integration forwards every Sprig message at the **`verbose`** level. To see Sprig output, set the RudderStack log level to `.verbose`:
+
+```swift
+LoggerAnalytics.logLevel = .verbose
+```
+
+When the RudderStack log level is `.none`, the integration skips listener registration entirely and no Sprig output is forwarded.
+
 ---
 
 Replace:

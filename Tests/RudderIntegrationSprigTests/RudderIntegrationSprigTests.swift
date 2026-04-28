@@ -339,16 +339,16 @@ struct SprigIntegrationTests {
         }
     }
 
-    @Test("Given registered listener emits a message, when invoked, then forwards to LoggerAnalytics.debug")
-    func testLoggingListenerForwardsMessageToDebug() throws {
+    @Test("Given registered listener emits a message, when invoked, then forwards to LoggerAnalytics.verbose")
+    func testLoggingListenerForwardsMessageToVerbose() throws {
         let capturingLogger = CapturingLogger()
-        try withLogLevel(.debug, logger: capturingLogger) {
+        try withLogLevel(.verbose, logger: capturingLogger) {
             let (integration, mock) = createIntegration()
             try integration.create(destinationConfig: ["environmentId": "test-env-123"])
 
             mock.registerLoggingListenerCalls.first?("hello from Sprig")
 
-            #expect(capturingLogger.debugMessages.contains("SprigIntegration: hello from Sprig"))
+            #expect(capturingLogger.verboseMessages.contains("SprigIntegration: hello from Sprig"))
         }
     }
 

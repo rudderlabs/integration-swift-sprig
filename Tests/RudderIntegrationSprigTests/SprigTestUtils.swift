@@ -4,16 +4,16 @@ import RudderStackAnalytics
 
 final class CapturingLogger: Logger, @unchecked Sendable {
     private let lock = NSLock()
-    private var _debugMessages: [String] = []
+    private var _verboseMessages: [String] = []
 
-    var debugMessages: [String] {
+    var verboseMessages: [String] {
         lock.lock(); defer { lock.unlock() }
-        return _debugMessages
+        return _verboseMessages
     }
 
-    func debug(log: String) {
+    func verbose(log: String) {
         lock.lock(); defer { lock.unlock() }
-        _debugMessages.append(log)
+        _verboseMessages.append(log)
     }
 }
 

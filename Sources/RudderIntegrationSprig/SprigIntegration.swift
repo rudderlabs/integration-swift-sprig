@@ -127,12 +127,13 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     ///
     /// Sprig iOS emits log output via `.loggingEvent` lifecycle callbacks but — unlike Sprig
     /// Android — does not expose a severity with each message, so every message is forwarded
-    /// at `debug`. Registration is skipped when the Rudder log level is `.none`.
+    /// at `verbose`. Sprig output therefore only surfaces when the Rudder log level is set to
+    /// `.verbose`. Registration is skipped entirely when the Rudder log level is `.none`.
     private func registerSprigLogging() {
         guard LoggerAnalytics.logLevel != .none else { return }
 
         sprigAdapter.registerLoggingListener { message in
-            LoggerAnalytics.debug("SprigIntegration: \(message)")
+            LoggerAnalytics.verbose("SprigIntegration: \(message)")
         }
         loggingListenerRegistered = true
     }
