@@ -78,6 +78,7 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
             sprigAdapter.unregisterLoggingListener()
             loggingListenerRegistered = false
         }
+        viewController = nil
         sprigAdapter.sprigInstance = nil
         LoggerAnalytics.debug("SprigIntegration: teardown completed.")
     }

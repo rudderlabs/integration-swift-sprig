@@ -381,6 +381,21 @@ struct SprigIntegrationTests {
         }
     }
 
+    @Test("Given viewController is set, when teardown is called, then track falls back to plain track")
+    @MainActor
+    func testTeardownClearsViewController() {
+        let (integration, mock) = createIntegration()
+        let (viewController, _window) = makePresentableViewController()
+        integration.setViewController(viewController)
+
+        integration.teardown()
+        integration.track(payload: createTrackEvent(name: "After Teardown"))
+
+        #expect(mock.trackCalls.count == 1)
+        #expect(mock.trackAndPresentCalls.isEmpty)
+        _ = _window
+    }
+
     @Test("Given teardown was called, when create is called again, then re-registers logging listener")
     func testTeardownAllowsReRegistration() throws {
         try withLogLevel(.debug) {
