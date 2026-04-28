@@ -287,10 +287,10 @@ struct SprigIntegrationTests {
         _ = window
     }
 
-    @Test("Given track is called from a background thread, when VC is not presentable, then plain track runs on the main thread")
-    func testTrackDispatchesOnMainThreadWhenFallingBack() async {
+    @Test("Given no viewController set, when track is called from a background thread, then plain track runs on the caller thread")
+    func testTrackStaysOnCallerThreadWhenNoViewController() async {
         let mock = MockSprigAdapter()
-        let integration = SprigIntegration(sprigAdapter:mock)
+        let integration = SprigIntegration(sprigAdapter: mock)
 
         await withCheckedContinuation { continuation in
             mock.onTrack = { continuation.resume() }
@@ -300,7 +300,7 @@ struct SprigIntegrationTests {
         }
 
         #expect(mock.trackCalls.count == 1)
-        #expect(mock.lastTrackOnMainThread == true)
+        #expect(mock.lastTrackOnMainThread == false)
     }
 
     // MARK: - Logging Listener Tests

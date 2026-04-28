@@ -36,12 +36,14 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     /// (i.e. no survey is presented).
     ///
     /// ## Presentation safety
-    /// On every `track` event, the integration:
-    /// 1. Hops to the main thread (so it is safe to call `track` from any thread).
-    /// 2. Verifies the stored view controller is still presentable — loaded, attached to a window,
-    ///    and not being dismissed.
-    /// 3. Falls back to plain `Sprig.track(...)` if the view controller has gone away or is no
-    ///    longer in a presentable state. No exception is thrown; the event is still delivered.
+    /// On a `track` event:
+    /// - If no view controller is set, the integration calls plain `Sprig.track(...)` on the
+    ///   caller's thread.
+    /// - If a view controller is set, the integration hops to the main thread (so it is safe to
+    ///   call `track` from any thread), verifies the view controller is still presentable —
+    ///   loaded, attached to a window, and not being dismissed — and either calls
+    ///   `Sprig.trackAndPresent(...)` or falls back to plain `Sprig.track(...)` if it is not.
+    ///   No exception is thrown; the event is still delivered.
     ///
     /// - Parameter viewController: The view controller to present surveys from, or `nil` to clear.
     public func setViewController(_ viewController: UIViewController?) {
@@ -101,10 +103,15 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
         let eventName = payload.event
         let properties = payload.properties?.dictionary?.rawDictionary
 
+        guard let viewController = self.viewController else {
+            sprigAdapter.track(eventName: eventName, properties: properties)
+            LoggerAnalytics.debug("SprigIntegration: track called for event '\(eventName)'")
+            return
+        }
+
         runOnMain { [weak self] in
             guard let self = self else { return }
-
-            if let viewController = self.viewController, Self.isPresentable(viewController) {
+            if Self.isPresentable(viewController) {
                 self.sprigAdapter.trackAndPresent(eventName: eventName, properties: properties, from: viewController)
                 LoggerAnalytics.debug("SprigIntegration: trackAndPresent called for event '\(eventName)'")
             } else {

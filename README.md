@@ -144,11 +144,10 @@ sprigIntegration.setViewController(nil)
 
 #### Presentation safety
 
-On every `track` event, the integration:
+On a `track` event:
 
-1. Hops to the main thread, so it is safe to call `track` from any thread.
-2. Verifies the stored view controller is still presentable — loaded, attached to a window, and not being dismissed.
-3. Falls back to plain `Sprig.track(...)` (i.e. no survey is presented) if the view controller has gone away or is no longer presentable. The event is still delivered to Sprig.
+- If no view controller is set, the integration calls plain `Sprig.track(...)` on the caller's thread.
+- If a view controller is set, the integration hops to the main thread (so it is safe to call `track` from any thread), verifies the view controller is still presentable — loaded, attached to a window, and not being dismissed — and either calls `Sprig.trackAndPresent(...)` or falls back to plain `Sprig.track(...)` if it is not. The event is still delivered to Sprig.
 
 This means you do not need to worry about clearing the reference before tearing down a view controller — the worst case is that one in-flight `track` event quietly skips presentation.
 
