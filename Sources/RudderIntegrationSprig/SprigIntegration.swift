@@ -109,9 +109,9 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
             return
         }
 
-        runOnMain { [weak self] in
+        SprigUtils.runOnMain { [weak self] in
             guard let self = self else { return }
-            if Self.isPresentable(viewController) {
+            if SprigUtils.isPresentable(viewController) {
                 self.sprigAdapter.trackAndPresent(eventName: eventName, properties: properties, from: viewController)
                 LoggerAnalytics.debug("SprigIntegration: trackAndPresent called for event '\(eventName)'")
             } else {
@@ -138,17 +138,4 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
         loggingListenerRegistered = true
     }
 
-    private func runOnMain(_ block: @escaping () -> Void) {
-        if Thread.isMainThread {
-            block()
-        } else {
-            DispatchQueue.main.async(execute: block)
-        }
-    }
-
-    private static func isPresentable(_ viewController: UIViewController) -> Bool {
-        return viewController.isViewLoaded
-            && viewController.view.window != nil
-            && !viewController.isBeingDismissed
-    }
 }

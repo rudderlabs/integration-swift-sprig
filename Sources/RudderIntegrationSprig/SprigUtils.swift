@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import RudderStackAnalytics
 
 enum SprigUtils {
@@ -54,5 +55,19 @@ enum SprigUtils {
         let trimmed = String(key.prefix(maxAttributeKeyLength))
         LoggerAnalytics.warn("SprigIntegration: property name '\(key)' exceeds \(maxAttributeKeyLength) characters. Trimming to '\(trimmed)'.")
         return trimmed
+    }
+
+    static func runOnMain(_ block: @escaping () -> Void) {
+        if Thread.isMainThread {
+            block()
+        } else {
+            DispatchQueue.main.async(execute: block)
+        }
+    }
+
+    static func isPresentable(_ viewController: UIViewController) -> Bool {
+        return viewController.isViewLoaded
+            && viewController.view.window != nil
+            && !viewController.isBeingDismissed
     }
 }
