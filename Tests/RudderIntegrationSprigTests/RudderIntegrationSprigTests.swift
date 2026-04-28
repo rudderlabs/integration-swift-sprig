@@ -10,7 +10,7 @@ struct SprigIntegrationTests {
     // MARK: - Test Setup Helpers
 
     private func createIntegration(mockAdapter: MockSprigAdapter = MockSprigAdapter()) -> (SprigIntegration, MockSprigAdapter) {
-        let integration = SprigIntegration(adapter: mockAdapter)
+        let integration = SprigIntegration(sprigAdapter:mockAdapter)
         return (integration, mockAdapter)
     }
 
@@ -266,7 +266,7 @@ struct SprigIntegrationTests {
     @Test("Given track is called from a background thread, when VC is presentable, then trackAndPresent runs on the main thread")
     func testTrackDispatchesOnMainThreadWhenPresenting() async {
         let mock = MockSprigAdapter()
-        let integration = SprigIntegration(adapter: mock)
+        let integration = SprigIntegration(sprigAdapter:mock)
         let window = await MainActor.run { () -> UIWindow in
             let viewController = UIViewController()
             let window = UIWindow()
@@ -291,7 +291,7 @@ struct SprigIntegrationTests {
     @Test("Given track is called from a background thread, when VC is not presentable, then plain track runs on the main thread")
     func testTrackDispatchesOnMainThreadWhenFallingBack() async {
         let mock = MockSprigAdapter()
-        let integration = SprigIntegration(adapter: mock)
+        let integration = SprigIntegration(sprigAdapter:mock)
 
         await withCheckedContinuation { continuation in
             mock.onTrack = { continuation.resume() }

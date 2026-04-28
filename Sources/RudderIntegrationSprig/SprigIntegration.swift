@@ -8,16 +8,16 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     public var analytics: Analytics?
     public var key: String = "Sprig"
 
-    final var adapter: SprigAdapter
+    final var sprigAdapter: SprigAdapter
     private weak var viewController: UIViewController?
     private var loggingListenerRegistered = false
 
-    init(adapter: SprigAdapter) {
-        self.adapter = adapter
+    init(sprigAdapter: SprigAdapter) {
+        self.sprigAdapter = sprigAdapter
     }
 
     public convenience init() {
-        self.init(adapter: DefaultSprigAdapter())
+        self.init(sprigAdapter: DefaultSprigAdapter())
     }
 
     // MARK: - Public API
@@ -51,32 +51,32 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     // MARK: - IntegrationPlugin
 
     public func getDestinationInstance() -> Any? {
-        return adapter.sprigInstance
+        return sprigAdapter.sprigInstance
     }
 
     public func create(destinationConfig: [String: Any]) throws {
-        guard adapter.sprigInstance == nil else { return }
+        guard sprigAdapter.sprigInstance == nil else { return }
         guard let environmentId = destinationConfig["environmentId"] as? String, !environmentId.isEmpty else {
             LoggerAnalytics.error("SprigIntegration: Invalid or missing environmentId. Aborting Sprig initialization.")
             return
         }
-        adapter.sprigInstance = adapter.provideSprigInstance()
-        adapter.configure(withEnvironment: environmentId)
+        sprigAdapter.sprigInstance = sprigAdapter.provideSprigInstance()
+        sprigAdapter.configure(withEnvironment: environmentId)
         registerSprigLogging()
         LoggerAnalytics.debug("SprigIntegration: Sprig SDK initialized successfully.")
     }
 
     public func reset() {
-        adapter.logout()
+        sprigAdapter.logout()
         LoggerAnalytics.debug("SprigIntegration: Sprig logout called.")
     }
 
     public func teardown() {
         if loggingListenerRegistered {
-            adapter.unregisterLoggingListener()
+            sprigAdapter.unregisterLoggingListener()
             loggingListenerRegistered = false
         }
-        adapter.sprigInstance = nil
+        sprigAdapter.sprigInstance = nil
         LoggerAnalytics.debug("SprigIntegration: teardown completed.")
     }
 
@@ -87,16 +87,16 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
             LoggerAnalytics.error("SprigIntegration: UserId is not set. Dropping identify event.")
             return
         }
-        adapter.setUserIdentifier(userId)
+        sprigAdapter.setUserIdentifier(userId)
 
         if let traits = payload.context?["traits"] as? AnyCodable,
            let traitsDictionary = traits.value as? [String: Any] {
             if let email = traitsDictionary[SprigUtils.emailKey] as? String {
-                adapter.setEmailAddress(email)
+                sprigAdapter.setEmailAddress(email)
             }
             let filteredTraits = SprigUtils.filterTraits(traitsDictionary)
             if !filteredTraits.isEmpty {
-                adapter.setVisitorAttributes(filteredTraits)
+                sprigAdapter.setVisitorAttributes(filteredTraits)
             }
         }
 
@@ -111,10 +111,10 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
             guard let self = self else { return }
 
             if let viewController = self.viewController, Self.isPresentable(viewController) {
-                self.adapter.trackAndPresent(eventName: eventName, properties: properties, from: viewController)
+                self.sprigAdapter.trackAndPresent(eventName: eventName, properties: properties, from: viewController)
                 LoggerAnalytics.debug("SprigIntegration: trackAndPresent called for event '\(eventName)'")
             } else {
-                self.adapter.track(eventName: eventName, properties: properties)
+                self.sprigAdapter.track(eventName: eventName, properties: properties)
                 LoggerAnalytics.debug("SprigIntegration: track called for event '\(eventName)'")
             }
         }
@@ -132,7 +132,7 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
         guard !loggingListenerRegistered else { return }
         guard LoggerAnalytics.logLevel != .none else { return }
 
-        adapter.registerLoggingListener { message in
+        sprigAdapter.registerLoggingListener { message in
             LoggerAnalytics.debug("SprigIntegration: \(message)")
         }
         loggingListenerRegistered = true
