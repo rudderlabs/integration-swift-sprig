@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 import UIKit
+import UserLeapKit
 import RudderStackAnalytics
 @testable import RudderIntegrationSprig
 
@@ -89,22 +90,28 @@ struct SprigIntegrationTests {
         #expect(mock.configureCalls.first == "test-env-123")
     }
 
-    @Test("Given missing environmentId, when create is called, then does not configure Sprig SDK")
-    func testCreateWithMissingConfig() throws {
+    @Test("Given missing environmentId, when create is called, then throws and does not configure Sprig SDK")
+    func testCreateWithMissingConfig() {
         let (integration, mock) = createIntegration()
 
-        try integration.create(destinationConfig: [:])
+        #expect(throws: SprigIntegrationError.invalidEnvironmentId) {
+            try integration.create(destinationConfig: [:])
+        }
 
         #expect(mock.configureCalls.isEmpty)
+        #expect(integration.getDestinationInstance() == nil)
     }
 
-    @Test("Given empty environmentId, when create is called, then does not configure Sprig SDK")
+    @Test("Given empty environmentId, when create is called, then throws, and a later valid config configures Sprig SDK")
     func testCreateWithEmptyEnvironmentId() throws {
         let (integration, mock) = createIntegration()
 
-        try integration.create(destinationConfig: ["environmentId": ""])
+        #expect(throws: SprigIntegrationError.invalidEnvironmentId) {
+            try integration.create(destinationConfig: ["environmentId": ""])
+        }
+        try integration.create(destinationConfig: ["environmentId": "test-env-123"])
 
-        #expect(mock.configureCalls.isEmpty)
+        #expect(mock.configureCalls == ["test-env-123"])
     }
 
     // MARK: - GetDestinationInstance Tests
@@ -409,6 +416,46 @@ struct SprigIntegrationTests {
         }
     }
 
+    // MARK: - Lite Mode Tests
+
+    @Test("Given lite mode, when create runs with no environmentId, then with one before and after a teardown, then Sprig is never configured and the app's instance is kept")
+    func testLiteModeCreateKeepsAppInstance() throws {
+        try withLogLevel(.debug) {
+            let appSprig = NSObject()
+            let mock = MockSprigAdapter()
+            let integration = SprigIntegration(sprigAdapter: mock, appSprigInstance: appSprig)
+
+            #expect(throws: SprigIntegrationError.invalidEnvironmentId) {
+                try integration.create(destinationConfig: [:])
+            }
+            #expect(integration.getDestinationInstance() == nil)
+
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+            integration.teardown()
+            try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+
+            #expect(mock.configureCalls.isEmpty)
+            #expect(mock.registerLoggingListenerCalls.count == 2)
+            #expect(integration.getDestinationInstance() as? NSObject === appSprig)
+        }
+    }
+
+    @Test("Given lite mode and a presentable viewController, when track is called, then calls trackAndPresent")
+    @MainActor
+    func testLiteModeTrackWithViewController() throws {
+        let mock = MockSprigAdapter()
+        let integration = SprigIntegration(sprigAdapter: mock, appSprigInstance: NSObject())
+        try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+        let (viewController, window) = makePresentableViewController()
+        integration.setViewController(viewController)
+
+        integration.track(payload: createTrackEvent(name: "Survey Trigger"))
+
+        #expect(mock.trackAndPresentCalls.first?.viewController === viewController)
+        #expect(mock.trackCalls.isEmpty)
+        _ = window
+    }
+
     // MARK: - Reset Tests
 
     @Test("Given SprigIntegration, when reset is called, then calls logout")
@@ -418,6 +465,25 @@ struct SprigIntegrationTests {
         integration.reset()
 
         #expect(mock.logoutCalled)
+    }
+}
+
+// MARK: - Lite Mode Initialiser Tests
+
+@Suite("Sprig lite mode initialiser Tests")
+struct SprigLiteModeInitialiserTests {
+
+    @Test("Given the Swift and Objective-C lite initialisers, when create is called, then each holds the app's Sprig instance")
+    func testPublicLiteInitialisers() throws {
+        let integration = SprigIntegration(sprig: UserLeap.shared)
+        let objCIntegration = ObjCSprigIntegration(sprig: UserLeap.shared)
+
+        try integration.create(destinationConfig: ["environmentId": "test-env-123"])
+        let created = objCIntegration.createWithDestinationConfig(["environmentId": "test-env-123"], error: nil)
+
+        #expect(integration.getDestinationInstance() as? UserLeap === UserLeap.shared)
+        #expect(created == true)
+        #expect(objCIntegration.getDestinationInstance() as? UserLeap === UserLeap.shared)
     }
 }
 
