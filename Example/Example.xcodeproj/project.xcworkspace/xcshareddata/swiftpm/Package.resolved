@@ -1,13 +1,13 @@
 {
-  "originHash" : "2ef383bbedd94fea5323eb58cba312345a4a4cafd24c808b5a7efa99f5373096",
+  "originHash" : "bd20ff92e783c833f1e5fa0064343d14a81aa20cbeb0d5f2a4650afef40804cf",
   "pins" : [
     {
       "identity" : "rudder-sdk-swift",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/rudderlabs/rudder-sdk-swift.git",
       "state" : {
-        "revision" : "ce41412cf9e293d3050b90afa52e2a0cfadd3b1a",
-        "version" : "1.2.1"
+        "revision" : "090d735c8f930f817d534480ce2689f0b6a83c45",
+        "version" : "2.0.0"
       }
     },
     {

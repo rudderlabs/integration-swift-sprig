@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import UserLeapKit
 import RudderStackAnalytics
 
 @objc(RSSSprigIntegration)
@@ -28,6 +29,14 @@ public class ObjCSprigIntegration: NSObject, ObjCIntegrationPlugin, ObjCStandard
     @objc
     public override init() {
         self.sprigIntegration = SprigIntegration()
+        super.init()
+    }
+
+    /// Creates the integration in lite mode: it uses the app's Sprig instance and never configures Sprig.
+    /// - Parameter sprig: The Sprig instance that the app configured, usually `[Sprig shared]`.
+    @objc
+    public init(sprig: UserLeap) {
+        self.sprigIntegration = SprigIntegration(sprig: sprig)
         super.init()
     }
 

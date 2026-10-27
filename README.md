@@ -172,6 +172,27 @@ LoggerAnalytics.logLevel = .verbose
 
 When the RudderStack log level is `.none`, the integration skips listener registration entirely and no Sprig output is forwarded.
 
+### Lite mode
+
+In lite mode, your app configures Sprig and passes the instance to the integration. The integration then only maps events and sends them to Sprig.
+
+```swift
+Sprig.shared.configure(withEnvironment: "<ENVIRONMENT_ID>")
+let sprigIntegration = SprigIntegration(sprig: Sprig.shared)
+analytics.add(plugin: sprigIntegration)
+```
+
+In Objective-C, use `[[RSSSprigIntegration alloc] initWithSprig:[Sprig shared]]`.
+
+In lite mode, the integration:
+
+- Does not call `configure(withEnvironment:)`. The dashboard environment ID is not used, but it must hold a value.
+- Waits for the source config before it sends events.
+- Forwards the Sprig log output to the RudderStack logger, as in the standard mode.
+- Presents surveys in the same way. Set a view controller as [Setting a View Controller for Surveys](#setting-a-view-controller-for-surveys) describes.
+
+When you remove the integration, it unregisters all Sprig logging listeners, also the ones that your app registered. The Sprig iOS SDK cannot remove one listener.
+
 ---
 
 Replace:

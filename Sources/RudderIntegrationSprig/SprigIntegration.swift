@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import UserLeapKit
 import RudderStackAnalytics
 
 public class SprigIntegration: IntegrationPlugin, StandardIntegration {
@@ -9,15 +10,23 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
     public var key: String = "Sprig"
 
     final var sprigAdapter: SprigAdapter
+    private let appSprigInstance: Any?
     private weak var viewController: UIViewController?
     private var loggingListenerRegistered = false
 
-    init(sprigAdapter: SprigAdapter) {
+    init(sprigAdapter: SprigAdapter, appSprigInstance: Any? = nil) {
         self.sprigAdapter = sprigAdapter
+        self.appSprigInstance = appSprigInstance
     }
 
     public convenience init() {
         self.init(sprigAdapter: DefaultSprigAdapter())
+    }
+
+    /// Creates the integration in lite mode: it uses the app's Sprig instance and never configures Sprig.
+    /// - Parameter sprig: The Sprig instance that the app configured, usually `Sprig.shared`.
+    public convenience init(sprig: UserLeap) {
+        self.init(sprigAdapter: DefaultSprigAdapter(), appSprigInstance: sprig)
     }
 
     // MARK: - Public API
@@ -60,12 +69,16 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
         guard sprigAdapter.sprigInstance == nil else { return }
         guard let environmentId = destinationConfig["environmentId"] as? String, !environmentId.isEmpty else {
             LoggerAnalytics.error("SprigIntegration: Invalid or missing environmentId. Aborting Sprig initialization.")
-            return
+            throw SprigIntegrationError.invalidEnvironmentId
         }
-        sprigAdapter.sprigInstance = sprigAdapter.provideSprigInstance()
-        sprigAdapter.configure(withEnvironment: environmentId)
+        if let appSprigInstance {
+            sprigAdapter.sprigInstance = appSprigInstance
+        } else {
+            sprigAdapter.sprigInstance = sprigAdapter.provideSprigInstance()
+            sprigAdapter.configure(withEnvironment: environmentId)
+            LoggerAnalytics.debug("SprigIntegration: Sprig SDK initialized successfully.")
+        }
         registerSprigLogging()
-        LoggerAnalytics.debug("SprigIntegration: Sprig SDK initialized successfully.")
     }
 
     public func reset() {
@@ -139,4 +152,17 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
         loggingListenerRegistered = true
     }
 
+}
+
+// MARK: - SprigIntegrationError
+
+enum SprigIntegrationError: LocalizedError {
+    case invalidEnvironmentId
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidEnvironmentId:
+            "The destination config has no environmentId"
+        }
+    }
 }
