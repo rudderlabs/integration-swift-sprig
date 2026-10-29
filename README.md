@@ -67,10 +67,10 @@ let package = Package(
 
 ## Supported Native Sprig SDK Version
 
-This integration supports UserLeapKit (Sprig) SDK version:
+This integration supports UserLeapKit (Sprig) SDK versions in the range:
 
-```
-4.29.0+
+```text
+[4.29.0, 5.0.0)
 ```
 
 ### Platform Support
