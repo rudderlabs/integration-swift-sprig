@@ -67,10 +67,10 @@ let package = Package(
 
 ## Supported Native Sprig SDK Version
 
-This integration supports UserLeapKit (Sprig) SDK version:
+This integration supports UserLeapKit (Sprig) SDK versions in the range:
 
-```
-4.29.0+
+```text
+[4.29.0, 5.0.0)
 ```
 
 ### Platform Support
@@ -172,26 +172,38 @@ LoggerAnalytics.logLevel = .verbose
 
 When the RudderStack log level is `.none`, the integration skips listener registration entirely and no Sprig output is forwarded.
 
-### Lite mode
+### Use your own Sprig instance
 
-In lite mode, your app configures Sprig and passes the instance to the integration. The integration then only maps events and sends them to Sprig.
+In the default setup, the integration configures Sprig from the destination configuration. Instead, your app can configure Sprig and pass that instance to the integration. The integration then only maps events and sends them to Sprig. This needs integration version 2.0.0 or higher.
+
+1. Add the Sprig iOS SDK to your app target. Use the package `https://github.com/UserLeap/userleap-ios-sdk-releases`, the product `UserLeapKit`, and a version in the range `[4.29.0, 5.0.0)`.
+2. Configure Sprig, then pass `Sprig.shared` to the integration:
 
 ```swift
-Sprig.shared.configure(withEnvironment: "<ENVIRONMENT_ID>")
+import RudderStackAnalytics
+import RudderIntegrationSprig
+import UserLeapKit
+
+Sprig.shared.configure(withEnvironment: "<SPRIG_ENVIRONMENT_ID>")
 let sprigIntegration = SprigIntegration(sprig: Sprig.shared)
 analytics.add(plugin: sprigIntegration)
 ```
 
+If your app already configures Sprig, keep that setup and skip the `configure` call. Configure Sprig before you add the integration.
+
 In Objective-C, use `[[RSSSprigIntegration alloc] initWithSprig:[Sprig shared]]`.
 
-In lite mode, the integration:
+With your own instance, the integration:
 
-- Does not call `configure(withEnvironment:)`. The dashboard environment ID is not used, but it must hold a value.
-- Waits for the source config before it sends events.
-- Forwards the Sprig log output to the RudderStack logger, as in the standard mode.
-- Presents surveys in the same way. Set a view controller as [Setting a View Controller for Surveys](#setting-a-view-controller-for-surveys) describes.
+- Doesn't call `configure(withEnvironment:)`.
+- Still forwards the Sprig log output to the RudderStack logger.
+- Still presents surveys in the same way. Set a view controller as [Setting a View Controller for Surveys](#setting-a-view-controller-for-surveys) describes.
+- Still calls Sprig `logout` on `reset`.
+- Waits for the source configuration before it sends events.
 
-When you remove the integration, it unregisters all Sprig logging listeners, also the ones that your app registered. The Sprig iOS SDK cannot remove one listener.
+The **Environment ID** connection setting still needs a value. The integration doesn't use it, but it rejects an empty value.
+
+When you remove the integration, it unregisters all Sprig logging listeners, also the ones that your app registered. The Sprig iOS SDK can't remove a single listener. This happens with or without your own Sprig instance. The Objective-C integration (`RSSSprigIntegration`) doesn't unregister listeners when you remove it.
 
 ---
 
