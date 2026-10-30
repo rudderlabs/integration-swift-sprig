@@ -1,0 +1,99 @@
+{
+  "copiedFiles": [
+    {
+      "output": "Sources/RudderIntegrationSprig/ObjCSprigIntegration.swift",
+      "source": "Integrations/Sprig/Sources/RudderIntegrationSprig/ObjCSprigIntegration.swift",
+      "transform": "copy"
+    },
+    {
+      "output": "Sources/RudderIntegrationSprig/SprigAdapter.swift",
+      "source": "Integrations/Sprig/Sources/RudderIntegrationSprig/SprigAdapter.swift",
+      "transform": "copy"
+    },
+    {
+      "output": "Sources/RudderIntegrationSprig/SprigIntegration.swift",
+      "source": "Integrations/Sprig/Sources/RudderIntegrationSprig/SprigIntegration.swift",
+      "transform": "copy"
+    },
+    {
+      "output": "Sources/RudderIntegrationSprig/SprigUtils.swift",
+      "source": "Integrations/Sprig/Sources/RudderIntegrationSprig/SprigUtils.swift",
+      "transform": "copy"
+    },
+    {
+      "output": "Sources/RudderIntegrationSprig/Version.swift",
+      "source": "Integrations/Sprig/Sources/RudderIntegrationSprig/Version.swift",
+      "transform": "copy"
+    },
+    {
+      "output": "CHANGELOG.md",
+      "source": "Integrations/Sprig/CHANGELOG.md",
+      "transform": "copy"
+    },
+    {
+      "output": "LICENSE",
+      "source": "LICENSE",
+      "transform": "copy"
+    },
+    {
+      "output": "README.md",
+      "source": "Integrations/Sprig/README.md",
+      "transform": "generated"
+    },
+    {
+      "output": ".github/CODEOWNERS",
+      "source": null,
+      "transform": "generated"
+    },
+    {
+      "output": ".gitignore",
+      "source": null,
+      "transform": "generated"
+    },
+    {
+      "output": "CONTRIBUTING.md",
+      "source": null,
+      "transform": "generated"
+    },
+    {
+      "output": "Package.swift",
+      "source": null,
+      "transform": "generated"
+    },
+    {
+      "output": "VERSION",
+      "source": null,
+      "transform": "generated"
+    }
+  ],
+  "fileHashes": {
+    ".github/CODEOWNERS": "b6186d483919a45be6dd29537a58adc1a5a34338ab74fcf6e9985506c18eb025",
+    ".gitignore": "6c3f21e0d020c2a3887f176d7d69e0e6456e31888e053bf9dd5d1c5c78972aeb",
+    "CHANGELOG.md": "da88d366f024b2063f1895f3665867f4a0ba012c777928498d4f71c27a91723e",
+    "CONTRIBUTING.md": "3548915bd1ed4721ac69cbdd0b85c20dccd32200108eb4f2130775353f455505",
+    "LICENSE": "130c075edb106634e90df2eb62cba8f7a3cb2c0e8ccec39cb168fc649684205d",
+    "Package.swift": "336463d5dd72bf7d9baf9f7f7fa57709a10a68cea7f3e516ab3c57d78b623939",
+    "README.md": "e7fd92097a3458eb57f662c1e293a3337b13982d4ebdbd16b5e46ad5294e1b71",
+    "Sources/RudderIntegrationSprig/ObjCSprigIntegration.swift": "f2003fcca36f6be915713f5e2dafba0a8ec7edf9221e6321c001f60513f82c16",
+    "Sources/RudderIntegrationSprig/SprigAdapter.swift": "4e0c62b74dc5016851e90edecf4358b6f0250a32f2edcef63f5808bd498a1764",
+    "Sources/RudderIntegrationSprig/SprigIntegration.swift": "996f69a778975f28904aa04d065abd5871450820872d2df2b01c114b163d6214",
+    "Sources/RudderIntegrationSprig/SprigUtils.swift": "5880e1d47dd7565e28446626546e8a057f2a6b2a78067427fdbefd7e648ce1a4",
+    "Sources/RudderIntegrationSprig/Version.swift": "480d39d069f6bf5fb3c3a2111d6aaaef436a9594012b3002a7cf334e32dd4e61",
+    "VERSION": "c28fcca53637bc88e124af1725df13cb98c69dedefd62fb3cdbe1cdb6b760624"
+  },
+  "package": "sprig",
+  "policies": {
+    "RudderStackAnalytics": {
+      "mode": "external",
+      "package": "swift-sdk"
+    }
+  },
+  "schemaVersion": 1,
+  "sourceCommit": "eddf3e08fa9893bf67babb976684fc9c4406f7da",
+  "sourceRepository": "rudderlabs/rudder-monorepo-swift",
+  "targetClosure": [
+    "RudderStackAnalytics",
+    "RudderIntegrationSprig"
+  ],
+  "version": "2.0.0"
+}
