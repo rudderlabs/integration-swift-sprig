@@ -32,7 +32,7 @@ public class ObjCSprigIntegration: NSObject, ObjCIntegrationPlugin, ObjCStandard
         super.init()
     }
 
-    /// Creates the integration in lite mode: it uses the app's Sprig instance and never configures Sprig.
+    /// Creates the integration with your app's own Sprig instance; the integration never configures Sprig.
     /// - Parameter sprig: The Sprig instance that the app configured, usually `[Sprig shared]`.
     @objc
     public init(sprig: UserLeap) {
