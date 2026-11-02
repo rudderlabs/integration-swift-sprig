@@ -23,7 +23,7 @@ public class SprigIntegration: IntegrationPlugin, StandardIntegration {
         self.init(sprigAdapter: DefaultSprigAdapter())
     }
 
-    /// Creates the integration in lite mode: it uses the app's Sprig instance and never configures Sprig.
+    /// Creates the integration with your app's own Sprig instance; the integration never configures Sprig.
     /// - Parameter sprig: The Sprig instance that the app configured, usually `Sprig.shared`.
     public convenience init(sprig: UserLeap) {
         self.init(sprigAdapter: DefaultSprigAdapter(), appSprigInstance: sprig)
