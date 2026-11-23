@@ -14,9 +14,9 @@ enum SprigUtils {
     /// they are not also sent as visitor attributes.
     static let standardTraitKeys: Set<String> = [emailKey]
 
-    static func setSprigAttributes(_ traits: [String: Any], adapter: SprigAdapter) {
+    static func setSprigAttributes(_ traits: [String: Any], adapter: SprigAdapter, logger: Logger) {
         setStandardTraits(traits, adapter: adapter)
-        setCustomTraits(traits, adapter: adapter)
+        setCustomTraits(traits, adapter: adapter, logger: logger)
     }
 
     private static func setStandardTraits(_ traits: [String: Any], adapter: SprigAdapter) {
@@ -25,20 +25,20 @@ enum SprigUtils {
         }
     }
 
-    private static func setCustomTraits(_ traits: [String: Any], adapter: SprigAdapter) {
+    private static func setCustomTraits(_ traits: [String: Any], adapter: SprigAdapter, logger: Logger) {
         for (key, value) in traits where !standardTraitKeys.contains(key) {
-            setVisitorAttribute(key: key, value: value, adapter: adapter)
+            setVisitorAttribute(key: key, value: value, adapter: adapter, logger: logger)
         }
     }
 
-    private static func setVisitorAttribute(key: String, value: Any, adapter: SprigAdapter) {
+    private static func setVisitorAttribute(key: String, value: Any, adapter: SprigAdapter, logger: Logger) {
         if key.hasPrefix("!") {
-            LoggerAnalytics.warn("SprigIntegration: '\(key)' is not a valid property name. Property names cannot start with '!'. Ignoring property.")
+            logger.warn(log: "SprigIntegration: '\(key)' is not a valid property name. Property names cannot start with '!'. Ignoring property.")
             return
         }
-        let normalizedKey = normalizeKeyLength(key)
+        let normalizedKey = normalizeKeyLength(key, logger: logger)
         guard isSupportedValue(value) else {
-            LoggerAnalytics.warn("SprigIntegration: '\(value)' is not a valid property value. Only String, Bool, Double and Int are accepted. Ignoring property.")
+            logger.warn(log: "SprigIntegration: '\(value)' is not a valid property value. Only String, Bool, Double and Int are accepted. Ignoring property.")
             return
         }
         adapter.setVisitorAttribute(key: normalizedKey, value: value)
@@ -50,10 +50,10 @@ enum SprigUtils {
         return value is String || value is NSNumber
     }
 
-    private static func normalizeKeyLength(_ key: String) -> String {
+    private static func normalizeKeyLength(_ key: String, logger: Logger) -> String {
         guard key.count > maxAttributeKeyLength else { return key }
         let trimmed = String(key.prefix(maxAttributeKeyLength))
-        LoggerAnalytics.warn("SprigIntegration: property name '\(key)' exceeds \(maxAttributeKeyLength) characters. Trimming to '\(trimmed)'.")
+        logger.warn(log: "SprigIntegration: property name '\(key)' exceeds \(maxAttributeKeyLength) characters. Trimming to '\(trimmed)'.")
         return trimmed
     }
 
